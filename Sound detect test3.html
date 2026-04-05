@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Detection with Beep</title>
+<style>
+  body { font-family: Arial; text-align: center; margin-top: 50px; font-size: 2em; }
+  button { font-size: 1em; padding: 10px 20px; margin: 10px; }
+</style>
+</head>
+<body>
+<div id="message">Welcome!</div>
+<button id="startBtn">Click to Enable Sounds</button>
+<button id="fullscreenBtn">Enter Fullscreen</button>
+
+<script>
+const message = document.getElementById('message');
+const startBtn = document.getElementById('startBtn');
+const fsBtn = document.getElementById('fullscreenBtn');
+let timeoutID;
+let audioCtx;
+
+// Function to generate a beep
+function playBeep() {
+    if (!audioCtx) return; // audio not initialized
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(600, audioCtx.currentTime); // frequency in Hz
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // volume
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.2); // duration 0.2s
+}
+
+// Function to show a temporary message
+function showTempMessage(text) {
+    message.textContent = text;
+    playBeep();
+    clearTimeout(timeoutID);
+    timeoutID = setTimeout(() => {
+        message.textContent = "Welcome back";
+    }, 2000);
+}
+
+// Unlock audio on first click
+startBtn.addEventListener('click', () => {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    playBeep(); // play once to unlock
+    startBtn.style.display = 'none';
+
+    // Tab switching
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            showTempMessage("You are out");
+        } else {
+            setTimeout(() => { message.textContent = "Welcome back"; playBeep(); }, 2000);
+        }
+    });
+
+    // Window resize
+    window.addEventListener('resize', () => {
+        showTempMessage("You resized the window");
+    });
+
+    // Fullscreen exit detection
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) {
+            showTempMessage("You left fullscreen mode");
+        }
+    });
+});
+
+// Fullscreen button
+fsBtn.addEventListener('click', () => {
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+    }
+});
+</script>
+</body>
+</html>
